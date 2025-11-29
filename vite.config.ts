@@ -3,23 +3,18 @@ import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import { componentTagger } from "lovable-tagger";
 
-export default defineConfig(({ mode }) => ({
- 
-  base: mode === "development" ? "/" : "./",
-
+export default defineConfig({
+  base: "/", // ✅ importante para Vercel
   server: {
     host: "::",
     port: 8080,
   },
-
   plugins: [
-    react(),
-    mode === "development" && componentTagger()
-  ].filter(Boolean),
-
+    react()
+  ],
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
   },
-}));
+});
