@@ -1,54 +1,40 @@
+import { useEffect, useState } from "react";
 import { Navbar } from "@/components/Navbar";
 import { EventCard } from "@/components/EventCard";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Music, Calendar, Shield } from "lucide-react";
+
 import heroImage from "@/assets/hero-festival.jpg";
-import eventElectronic from "@/assets/event-electronic.jpg";
-import eventRock from "@/assets/event-rock.jpg";
-import eventJazz from "@/assets/event-jazz.jpg";
-import eventHipHop from "@/assets/event-hiphop.jpg";
+import eventFallback from "@/assets/event-electronic.jpg";
+
+import { listarEventosSSE } from "@/api/codechellaApi";
 
 const Index = () => {
-  const events = [
-    {
-      title: "Summer Electronic Festival",
-      date: "15 Dez 2024",
-      location: "São Paulo, SP",
-      price: "R$ 180",
-      image: eventElectronic,
-      category: "SHOW"
-    },
-    {
-      title: "Rock in Rio Experience",
-      date: "20 Dez 2024", 
-      location: "Rio de Janeiro, RJ",
-      price: "R$ 250",
-      image: eventRock,
-      category: "CONCERTO"
-    },
-    {
-      title: "Jazz & Blues Night",
-      date: "28 Dez 2024",
-      location: "Belo Horizonte, MG",
-      price: "R$ 120",
-      image: eventJazz,
-      category: "SHOW"
-    },
-    {
-      title: "Urban Beats Festival",
-      date: "5 Jan 2025",
-      location: "Brasília, DF",
-      price: "R$ 150",
-      image: eventHipHop,
-      category: "SHOW"
-    }
-  ];
+  const [eventos, setEventos] = useState([]);
+
+  // ================== CARREGA EVENTOS DO BACK VIA SSE ===================
+  useEffect(() => {
+    const sse = listarEventosSSE((evento) => {
+      setEventos((prev) => {
+        const existe = prev.find((ev) => ev.id === evento.id);
+
+        // Atualiza evento existente
+        if (existe) {
+          return prev.map((ev) => (ev.id === evento.id ? evento : ev));
+        }
+        // Adiciona novo evento
+        return [...prev, evento];
+      });
+    });
+
+    return () => sse.close();
+  }, []);
 
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      
-      {/* Hero Section */}
+
+      {/* ========================= HERO SECTION =========================== */}
       <section className="relative pt-20 min-h-[90vh] flex items-center overflow-hidden">
         <div className="absolute inset-0 z-0">
           <img 
@@ -58,7 +44,7 @@ const Index = () => {
           />
           <div className="absolute inset-0 bg-gradient-to-r from-background via-background/80 to-transparent"></div>
         </div>
-        
+
         <div className="container mx-auto px-4 relative z-10">
           <div className="max-w-2xl space-y-8 animate-fade-in">
             <div className="inline-block">
@@ -66,7 +52,7 @@ const Index = () => {
                 🎵 Plataforma de Eventos
               </span>
             </div>
-            
+
             <h1 className="font-display text-6xl md:text-7xl font-black leading-tight">
               Viva a música.
               <br />
@@ -74,17 +60,20 @@ const Index = () => {
                 Viva o momento.
               </span>
             </h1>
-            
+
             <p className="text-xl text-muted-foreground max-w-lg">
               Descubra os melhores eventos, festivais e shows. 
               Compre ingressos de forma rápida, segura e sem complicação.
             </p>
-            
+
             <div className="flex flex-wrap gap-4 pt-4">
-              <Button variant="hero" size="lg">
-                Explorar Eventos
-                <ArrowRight className="w-5 h-5" />
+              <Button variant="hero" size="lg" asChild>
+                <a href="/eventos">
+                  Explorar Eventos
+                  <ArrowRight className="w-5 h-5" />
+                </a>
               </Button>
+
               <Button variant="outline" size="lg">
                 Como Funciona
               </Button>
@@ -108,9 +97,10 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Events Section */}
+      {/* ===================== EVENTOS EM DESTAQUE ======================== */}
       <section id="eventos" className="py-24 bg-muted/30">
         <div className="container mx-auto px-4">
+
           <div className="text-center max-w-2xl mx-auto mb-16 space-y-4 animate-slide-up">
             <h2 className="font-display text-4xl md:text-5xl font-bold">
               Eventos em <span className="text-gradient">Destaque</span>
@@ -120,14 +110,29 @@ const Index = () => {
             </p>
           </div>
 
+          {/* Caso ainda não tenha nenhum evento vindo do SSE */}
+          {eventos.length === 0 && (
+            <p className="text-center text-muted-foreground text-lg">
+              Carregando eventos...
+            </p>
+          )}
+
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {events.map((event, index) => (
+            {eventos.map((event, index) => (
               <div 
-                key={index}
+                key={event.id}
                 className="animate-slide-up"
                 style={{ animationDelay: `${index * 0.1}s` }}
               >
-                <EventCard {...event} />
+                <EventCard
+                  title={event.nome}
+                  date={event.data}
+                  location={event.local}
+                  price={`R$ ${event.preco}`}
+                  category={event.categoria}
+                  image={event.imagem || eventFallback}
+                  id={event.id}
+                />
               </div>
             ))}
           </div>
@@ -143,7 +148,7 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Categories Section */}
+      {/* ====================== CATEGORIAS =========================== */}
       <section id="categorias" className="py-24 bg-gradient-to-b from-background to-muted/30">
         <div className="container mx-auto px-4">
           <div className="text-center max-w-2xl mx-auto mb-16 space-y-4">
@@ -181,7 +186,7 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Features Section */}
+      {/* ====================== FEATURES =========================== */}
       <section className="py-24">
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
@@ -195,7 +200,7 @@ const Index = () => {
               </p>
             </div>
 
-            <div className="text-center space-y-4 animate-fade-in" style={{ animationDelay: '0.1s' }}>
+            <div className="text-center space-y-4 animate-fade-in" style={{ animationDelay: "0.1s" }}>
               <div className="w-16 h-16 mx-auto bg-primary/10 rounded-2xl flex items-center justify-center">
                 <Calendar className="w-8 h-8 text-primary" />
               </div>
@@ -205,7 +210,7 @@ const Index = () => {
               </p>
             </div>
 
-            <div className="text-center space-y-4 animate-fade-in" style={{ animationDelay: '0.2s' }}>
+            <div className="text-center space-y-4 animate-fade-in" style={{ animationDelay: "0.2s" }}>
               <div className="w-16 h-16 mx-auto bg-primary/10 rounded-2xl flex items-center justify-center">
                 <Shield className="w-8 h-8 text-primary" />
               </div>
@@ -218,7 +223,7 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Footer */}
+      {/* ========================== FOOTER =========================== */}
       <footer className="py-12 bg-secondary text-secondary-foreground">
         <div className="container mx-auto px-4">
           <div className="flex flex-col md:flex-row justify-between items-center gap-8">
@@ -230,7 +235,7 @@ const Index = () => {
                 CodeChella
               </span>
             </div>
-            
+
             <div className="flex gap-8 text-sm">
               <a href="#" className="hover:text-primary transition-colors">Sobre</a>
               <a href="#" className="hover:text-primary transition-colors">Contato</a>
