@@ -4,10 +4,8 @@ import path from "path";
 import { componentTagger } from "lovable-tagger";
 
 export default defineConfig(({ mode }) => ({
-  // Base diferente para GitHub Pages e Vercel
-  base: mode === "production" 
-    ? process.env.VERCEL ? "/" : "/codechalle-front/" 
-    : "/",
+  // Base path correto:
+  base: mode === "development" ? "/" : "/",
 
   server: {
     host: "::",
