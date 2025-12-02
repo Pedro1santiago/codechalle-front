@@ -8,6 +8,34 @@ import { Search } from "lucide-react";
 import { getAllEvents } from "@/api/codechellaApi";
 import { useAuth } from "@/context/AuthContext";
 import { formatarPreco } from "@/lib/utils";
+import eventFallback from "@/assets/event-electronic.jpg";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+
+// Mapeamento de imagens por categoria
+const categoriasImagens: Record<string, string> = {
+  SHOW: "https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=800&q=80",
+  CONCERTO: "https://images.unsplash.com/photo-1514320291840-2e0a9bf2a9ae?w=800&q=80",
+  TEATRO: "https://images.unsplash.com/photo-1503095396549-807759245b35?w=800&q=80",
+  PALESTRA: "https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800&q=80",
+  WORKSHOP: "https://images.unsplash.com/photo-1552664730-d307ca884978?w=800&q=80"
+};
+
+function getImagemEvento(event: any): string {
+  if (event.imagemUrl || event.imagem) {
+    return event.imagemUrl || event.imagem;
+  }
+  const categoria = (event.categoria || event.tipo || "").toUpperCase();
+  return categoriasImagens[categoria] || eventFallback;
+}
 
 interface EventoDTO {
   id: number;
@@ -29,13 +57,13 @@ const AllEvents = () => {
   const { user } = useAuth();
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState<any | null>(null);
+  const [showLoginAlert, setShowLoginAlert] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
     async function load() {
       try {
-        const hasToken = Boolean(user?.token);
-        console.info("[AllEvents] Carregando eventos", { hasToken });
+        console.info("[AllEvents] Carregando eventos", { hasToken: Boolean(user?.token) });
         const data = await getAllEvents(user?.token);
         if (!cancelled) {
           setEventos(data || []);
@@ -49,6 +77,15 @@ const AllEvents = () => {
     load();
     return () => { cancelled = true; };
   }, [user?.token]);
+
+  function handleEventClick(event: any) {
+    if (!user) {
+      setShowLoginAlert(true);
+      return;
+    }
+    setSelected(event);
+    setOpen(true);
+  }
 
   const categories = [
     { id: "TODOS", label: "Todos" },
@@ -119,13 +156,13 @@ const AllEvents = () => {
                     date={event.data}
                     location={event.local}
                     price={`R$ ${formatarPreco(event.preco ?? event.valor)}`}
-                    image={event.imagemUrl || "/default-event.jpg"}
+                    image={getImagemEvento(event)}
                     category={(event.categoria || (event as any).tipo || "").toString()}
                     id={event.id}
-                    onClick={() => { setSelected(event); setOpen(true); }}
+                    onClick={() => handleEventClick(event)}
                     ingressosDisponiveis={event.ingressosDisponiveis}
                     canDelete={(user?.tipoUsuario === "SUPER") || (user?.tipoUsuario === "ADMIN" && event.idAdminCriador === user?.id)}
-                    onDelete={(e) => { e.stopPropagation(); setSelected(event); setOpen(true); }}
+                    onDelete={(e) => { e.stopPropagation(); handleEventClick(event); }}
                   />
                 </div>
               ))}
@@ -160,6 +197,24 @@ const AllEvents = () => {
           setEventos((prev) => prev.filter(e => e.id !== id));
         }}
       />
+
+      <AlertDialog open={showLoginAlert} onOpenChange={setShowLoginAlert}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Login Necessário</AlertDialogTitle>
+            <AlertDialogDescription>
+              Você precisa estar logado para ver os detalhes dos eventos e comprar ingressos.
+              Deseja fazer login agora?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={() => window.location.href = "/login"}>
+              Ir para Login
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

@@ -300,20 +300,33 @@ export async function getAllEvents(token) {
   const url = `${BASE_URL}/eventos`;
   const hasToken = Boolean(token);
   console.debug("[API] GET /eventos -> iniciando", { hasToken });
-  const res = await fetch(url, {
-    headers: hasToken ? buildHeaders(token) : { "Content-Type": "application/json" }
-  });
-  const raw = await res.text().catch(() => "");
-  if (!res.ok) {
-    console.error("[API] GET /eventos -> falha", { status: res.status, body: raw });
-    throw new Error(`Erro ao buscar eventos (${res.status})`);
-  }
+  
   try {
+    const res = await fetch(url, {
+      headers: hasToken ? buildHeaders(token) : { "Content-Type": "application/json" }
+    });
+    const raw = await res.text().catch(() => "");
+    
+    if (!res.ok) {
+      console.error("[API] GET /eventos -> falha", { status: res.status, body: raw });
+      // Se for 401 e não tiver token, retorna array vazio ao invés de erro
+      if (res.status === 401 && !hasToken) {
+        console.warn("[API] GET /eventos -> 401 sem token, retornando array vazio");
+        return [];
+      }
+      throw new Error(`Erro ao buscar eventos (${res.status})`);
+    }
+    
     const data = raw ? JSON.parse(raw) : [];
     console.debug("[API] GET /eventos -> sucesso", { count: Array.isArray(data) ? data.length : 0 });
     return data;
   } catch (e) {
-    console.error("[API] GET /eventos -> erro parse JSON", e, raw);
+    console.error("[API] GET /eventos -> erro", e);
+    // Se der erro e não tiver token, retorna array vazio
+    if (!hasToken) {
+      console.warn("[API] GET /eventos -> erro sem token, retornando array vazio");
+      return [];
+    }
     throw e;
   }
 }

@@ -6,6 +6,21 @@ import { Navbar } from "@/components/Navbar";
 import { useNavigate } from "react-router-dom";
 import { Trash2, Edit } from "lucide-react";
 
+// Mapeamento de imagens por categoria
+const categoriasImagens: Record<string, string> = {
+  SHOW: "https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=800&q=80",
+  CONCERTO: "https://images.unsplash.com/photo-1514320291840-2e0a9bf2a9ae?w=800&q=80",
+  TEATRO: "https://images.unsplash.com/photo-1503095396549-807759245b35?w=800&q=80",
+  PALESTRA: "https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800&q=80",
+  WORKSHOP: "https://images.unsplash.com/photo-1552664730-d307ca884978?w=800&q=80"
+};
+
+function getImagemEvento(evento: Evento): string {
+  if (evento.imagem) return evento.imagem;
+  const categoria = (evento.categoria || "").toUpperCase();
+  return categoriasImagens[categoria] || "https://images.unsplash.com/photo-1459749411175-04bf5292ceea?w=800&q=80";
+}
+
 interface Evento {
   id: number;
   nome: string;
@@ -96,15 +111,13 @@ export default function AdminDashboard() {
                   className="bg-card p-6 rounded-lg border border-border/50 hover:border-primary/50 transition-all"
                 >
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-6 items-start">
-                    {evento.imagem && (
-                      <div className="aspect-square rounded-lg overflow-hidden bg-muted">
-                        <img 
-                          src={evento.imagem} 
-                          alt={evento.nome}
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                    )}
+                    <div className="aspect-square rounded-lg overflow-hidden bg-muted">
+                      <img 
+                        src={getImagemEvento(evento)} 
+                        alt={evento.nome}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
                     
                     <div className="md:col-span-2">
                       <h3 className="text-xl font-bold text-foreground mb-2">{evento.nome}</h3>
