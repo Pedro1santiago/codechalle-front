@@ -1,61 +1,95 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Music } from "lucide-react";
-import { cadastrarUsuario, loginUsuario } from "../api/codechellaApi"; // <--- corrigido
+import { cadastrarUsuario, loginUsuario } from "../api/codechellaApi";
 
 const Login = () => {
   const navigate = useNavigate();
+  const { setUser } = useAuth();
 
-  const [loginData, setLoginData] = useState({
-    email: "",
-    senha: ""
-  });
-
-  const [signupData, setSignupData] = useState({
-    nome: "",
-    email: "",
-    senha: "",
-    confirmPassword: ""
-  });
-
+  const [loginData, setLoginData] = useState({ email: "", senha: "" });
+  const [signupData, setSignupData] = useState({ nome: "", email: "", senha: "", confirmPassword: "" });
   const [msg, setMsg] = useState("");
+  const [loading, setLoading] = useState(false);
 
   async function handleLogin(e) {
     e.preventDefault();
     setMsg("");
+    setLoading(true);
+
+    console.log("🔵 [HANDLELOGIN] Tentando fazer login com:", loginData);
+
     try {
       const data = await loginUsuario(loginData.email, loginData.senha);
-      navigate("/dashboard");
-    } catch {
-      setMsg("Email ou senha inválidos");
+      console.log("✅ [HANDLELOGIN] Resposta completa do login:", data);
+      console.log("✅ [HANDLELOGIN] Token recebido:", data?.token);
+      console.log("✅ [HANDLELOGIN] TipoUsuario recebido:", data?.tipoUsuario);
+      console.log("✅ [HANDLELOGIN] ID recebido:", data?.id);
+      
+      // Grava o usuário no contexto e localStorage
+      setUser(data);
+      console.log("✅ [HANDLELOGIN] Usuário gravado no contexto");
+      
+      // Redireciona baseado no tipoUsuario vindo do backend (TipoUsuario: SUPER, ADMIN, USER)
+      console.log("🔵 [HANDLELOGIN] TipoUsuario para redirecionar:", data?.tipoUsuario);
+      
+      if (data.tipoUsuario === "SUPER") {
+        console.log("🔵 [HANDLELOGIN] Redirecionando para /super-admin");
+        navigate("/super-admin");
+      } else if (data.tipoUsuario === "ADMIN") {
+        console.log("🔵 [HANDLELOGIN] Redirecionando para /admin-dashboard");
+        navigate("/admin-dashboard");
+      } else {
+        console.log("🔵 [HANDLELOGIN] Redirecionando para /");
+        navigate("/");
+      }
+    } catch (err) {
+      console.error("❌ [HANDLELOGIN] Erro ao fazer login:", err);
+      setMsg(err.message || "Email ou senha inválidos");
+    } finally {
+      setLoading(false);
     }
   }
 
   async function handleSignup(e) {
     e.preventDefault();
     setMsg("");
+    setLoading(true);
 
-    if (signupData.senha !== signupData.confirmPassword) {
-      setMsg("As senhas não coincidem");
+    // Valida se a senha tem no mínimo 6 caracteres
+    if (signupData.senha.length < 6) {
+      setMsg("Senha deve ter no mínimo 6 caracteres!");
+      setLoading(false);
       return;
     }
 
-    const user = {
-      nome: signupData.nome,
-      email: signupData.email,
-      senha: signupData.senha
+    if (signupData.senha !== signupData.confirmPassword) {
+      setMsg("As senhas não coincidem");
+      setLoading(false);
+      return;
+    }
+
+    const user = { 
+      nome: signupData.nome, 
+      email: signupData.email, 
+      senha: signupData.senha,
+      confirmarSenha: signupData.confirmPassword
     };
 
     try {
       await cadastrarUsuario(user);
-      setMsg("Conta criada com sucesso");
-    } catch {
-      setMsg("Erro ao cadastrar");
+      setMsg("Conta criada com sucesso! Faça login para continuar.");
+      setSignupData({ nome: "", email: "", senha: "", confirmPassword: "" }); // limpa formulário
+    } catch (err) {
+      setMsg(err.message || "Erro ao cadastrar");
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -107,7 +141,9 @@ const Login = () => {
                   </div>
                 </CardContent>
                 <CardFooter className="flex flex-col gap-4">
-                  <Button type="submit" className="w-full">Entrar</Button>
+                  <Button type="submit" className="w-full" disabled={loading}>
+                    {loading ? "Loading..." : "Entrar"}
+                  </Button>
                   <Button type="button" variant="ghost" className="w-full" onClick={() => navigate("/")}>
                     Voltar ao início
                   </Button>
@@ -162,7 +198,9 @@ const Login = () => {
                   </div>
                 </CardContent>
                 <CardFooter className="flex flex-col gap-4">
-                  <Button type="submit" className="w-full">Criar conta</Button>
+                  <Button type="submit" className="w-full" disabled={loading}>
+                    {loading ? "Loading..." : "Criar conta"}
+                  </Button>
                   <Button type="button" variant="ghost" className="w-full" onClick={() => navigate("/")}>
                     Voltar ao início
                   </Button>
@@ -178,4 +216,3 @@ const Login = () => {
 };
 
 export default Login;
-

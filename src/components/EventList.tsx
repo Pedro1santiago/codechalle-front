@@ -1,21 +1,28 @@
 import { useEffect, useState } from "react";
-import { listarEventosSSE } from "../api/codechellaApi";
+import { getAllEvents } from "../api/codechellaApi";
+import { useAuth } from "@/context/AuthContext";
 import { EventCard } from "./EventCard";
+import { formatarPreco } from "@/lib/utils";
 
 export default function EventList() {
   const [eventos, setEventos] = useState([]);
+  const { user } = useAuth();
 
   useEffect(() => {
-    const sse = listarEventosSSE((evento) => {
-      setEventos((prev) => {
-        const exists = prev.some(e => e.id === evento.id);
-        if (exists) return prev;
-        return [...prev, evento];
-      });
-    });
-
-    return () => sse.close();
-  }, []);
+    let cancelled = false;
+    async function load() {
+      try {
+        console.info("[EventList] Carregando eventos", { hasToken: Boolean(user?.token) });
+        const data = await getAllEvents(user?.token);
+        if (!cancelled) setEventos(Array.isArray(data) ? data : []);
+      } catch (e) {
+        console.error("[EventList] Erro ao carregar eventos:", e);
+        if (!cancelled) setEventos([]);
+      }
+    }
+    load();
+    return () => { cancelled = true; };
+  }, [user?.token]);
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 p-6">
@@ -25,9 +32,10 @@ export default function EventList() {
           title={ev.nome}
           date={ev.data}
           location={ev.local}
-          price={`R$ ${ev.preco}`}
-          image={ev.imagem}
-          category={ev.tipo}
+          price={`R$ ${formatarPreco(ev.preco ?? ev.valor)}`}
+          image={ev.imagemUrl || ev.imagem}
+          category={ev.categoria || ev.tipo}
+          id={ev.id}
         />
       ))}
     </div>

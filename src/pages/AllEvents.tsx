@@ -1,37 +1,54 @@
 import { useEffect, useState } from "react";
 import { Navbar } from "@/components/Navbar";
 import { EventCard } from "@/components/EventCard";
+import EventDetailsDialog from "@/components/EventDetailsDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
-import { listarEventosSSE } from "@/api/codechellaApi";
+import { getAllEvents } from "@/api/codechellaApi";
+import { useAuth } from "@/context/AuthContext";
+import { formatarPreco } from "@/lib/utils";
 
 interface EventoDTO {
   id: number;
   nome: string;
   data: string;
   local: string;
-  preco: number;
+  preco?: number;
+  valor?: number;
   categoria: string;
   imagemUrl?: string;
+  ingressosDisponiveis?: number;
+  idAdminCriador?: number;
 }
 
 const AllEvents = () => {
   const [selectedCategory, setSelectedCategory] = useState<string>("TODOS");
   const [searchTerm, setSearchTerm] = useState("");
   const [eventos, setEventos] = useState<EventoDTO[]>([]);
+  const { user } = useAuth();
+  const [open, setOpen] = useState(false);
+  const [selected, setSelected] = useState<any | null>(null);
 
   useEffect(() => {
-    const unsubscribe = listarEventosSSE((data) => {
-      setEventos((prev) => {
-        const exists = prev.some((e) => e.id === data.id);
-        if (!exists) return [...prev, data];
-        return prev.map((e) => (e.id === data.id ? data : e));
-      });
-    });
-
-    return () => unsubscribe.close();
-  }, []);
+    let cancelled = false;
+    async function load() {
+      try {
+        const hasToken = Boolean(user?.token);
+        console.info("[AllEvents] Carregando eventos", { hasToken });
+        const data = await getAllEvents(user?.token);
+        if (!cancelled) {
+          setEventos(data || []);
+          console.info("[AllEvents] Eventos carregados", { count: Array.isArray(data) ? data.length : 0 });
+        }
+      } catch (e) {
+        console.error("[AllEvents] Erro ao carregar eventos:", e);
+        if (!cancelled) setEventos([]);
+      }
+    }
+    load();
+    return () => { cancelled = true; };
+  }, [user?.token]);
 
   const categories = [
     { id: "TODOS", label: "Todos" },
@@ -43,11 +60,11 @@ const AllEvents = () => {
   ];
 
   const filteredEvents = eventos.filter((event) => {
-    const matchesCategory = selectedCategory === "TODOS" || event.categoria === selectedCategory;
+    const categoria = (event.categoria || (event as any).tipo || "").toUpperCase();
+    const matchesCategory = selectedCategory === "TODOS" || categoria === selectedCategory;
     const matchesSearch =
-      event.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      event.local.toLowerCase().includes(searchTerm.toLowerCase());
-
+      (event.nome || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (event.local || "").toLowerCase().includes(searchTerm.toLowerCase());
     return matchesCategory && matchesSearch;
   });
 
@@ -101,9 +118,14 @@ const AllEvents = () => {
                     title={event.nome}
                     date={event.data}
                     location={event.local}
-                    price={`R$ ${event.preco}`}
+                    price={`R$ ${formatarPreco(event.preco ?? event.valor)}`}
                     image={event.imagemUrl || "/default-event.jpg"}
-                    category={event.categoria}
+                    category={(event.categoria || (event as any).tipo || "").toString()}
+                    id={event.id}
+                    onClick={() => { setSelected(event); setOpen(true); }}
+                    ingressosDisponiveis={event.ingressosDisponiveis}
+                    canDelete={(user?.tipoUsuario === "SUPER") || (user?.tipoUsuario === "ADMIN" && event.idAdminCriador === user?.id)}
+                    onDelete={(e) => { e.stopPropagation(); setSelected(event); setOpen(true); }}
                   />
                 </div>
               ))}
@@ -117,6 +139,27 @@ const AllEvents = () => {
           )}
         </div>
       </div>
+
+      <EventDetailsDialog
+        open={open}
+        onOpenChange={setOpen}
+        evento={selected ? {
+          id: selected.id,
+          nome: selected.nome,
+          data: selected.data,
+          local: selected.local,
+          preco: selected.preco ?? selected.valor,
+          descricao: selected.descricao,
+          imagemUrl: selected.imagemUrl,
+          categoria: selected.categoria,
+          idAdminCriador: selected.idAdminCriador,
+          criadorNome: selected.criadorNome,
+          criadorEmail: selected.criadorEmail,
+        } : null}
+        onDeleted={(id) => {
+          setEventos((prev) => prev.filter(e => e.id !== id));
+        }}
+      />
     </div>
   );
 };

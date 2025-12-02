@@ -7,28 +7,36 @@ import { ArrowRight, Music, Calendar, Shield } from "lucide-react";
 import heroImage from "@/assets/hero-festival.jpg";
 import eventFallback from "@/assets/event-electronic.jpg";
 
-import { listarEventosSSE } from "@/api/codechellaApi";
+import { getAllEvents } from "@/api/codechellaApi";
+import { useAuth } from "@/context/AuthContext";
+import { formatarPreco } from "@/lib/utils";
+import EventDetailsDialog from "@/components/EventDetailsDialog";
 
 const Index = () => {
   const [eventos, setEventos] = useState([]);
+  const { user } = useAuth();
+  const [open, setOpen] = useState(false);
+  const [selected, setSelected] = useState<any | null>(null);
 
-  // ================== CARREGA EVENTOS DO BACK VIA SSE ===================
+  // ================== CARREGA EVENTOS DO BACK VIA GET COM AUTH ===================
   useEffect(() => {
-    const sse = listarEventosSSE((evento) => {
-      setEventos((prev) => {
-        const existe = prev.find((ev) => ev.id === evento.id);
-
-        // Atualiza evento existente
-        if (existe) {
-          return prev.map((ev) => (ev.id === evento.id ? evento : ev));
+    let cancelled = false;
+    async function load() {
+      try {
+        console.info("[Index] Carregando eventos", { hasToken: Boolean(user?.token) });
+        const data = await getAllEvents(user?.token);
+        if (!cancelled) {
+          setEventos(Array.isArray(data) ? data : []);
+          console.info("[Index] Eventos carregados", { count: Array.isArray(data) ? data.length : 0 });
         }
-        // Adiciona novo evento
-        return [...prev, evento];
-      });
-    });
-
-    return () => sse.close();
-  }, []);
+      } catch (e) {
+        console.error("[Index] Erro ao carregar eventos:", e);
+        if (!cancelled) setEventos([]);
+      }
+    }
+    load();
+    return () => { cancelled = true; };
+  }, [user?.token]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -128,10 +136,14 @@ const Index = () => {
                   title={event.nome}
                   date={event.data}
                   location={event.local}
-                  price={`R$ ${event.preco}`}
+                  price={`R$ ${formatarPreco(event.preco ?? event.valor)}`}
                   category={event.categoria}
-                  image={event.imagem || eventFallback}
+                  image={event.imagemUrl || event.imagem || eventFallback}
                   id={event.id}
+                  onClick={() => { setSelected(event); setOpen(true); }}
+                  ingressosDisponiveis={event.ingressosDisponiveis}
+                  canDelete={(user?.tipoUsuario === "SUPER") || (user?.tipoUsuario === "ADMIN" && event.idAdminCriador === user?.id)}
+                  onDelete={(e) => { e.stopPropagation(); setSelected(event); setOpen(true); }}
                 />
               </div>
             ))}
@@ -249,6 +261,27 @@ const Index = () => {
           </div>
         </div>
       </footer>
+
+      <EventDetailsDialog
+        open={open}
+        onOpenChange={setOpen}
+        evento={selected ? {
+          id: selected.id,
+          nome: selected.nome,
+          data: selected.data,
+          local: selected.local,
+          preco: selected.preco ?? selected.valor,
+          descricao: selected.descricao,
+          imagemUrl: selected.imagemUrl || selected.imagem,
+          categoria: selected.categoria,
+          idAdminCriador: selected.idAdminCriador,
+          criadorNome: selected.criadorNome,
+          criadorEmail: selected.criadorEmail,
+        } : null}
+        onDeleted={(id) => {
+          setEventos((prev) => prev.filter(e => e.id !== id));
+        }}
+      />
     </div>
   );
 };

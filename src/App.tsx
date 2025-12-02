@@ -3,10 +3,17 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import AllEvents from "./pages/AllEvents";
 import NotFound from "./pages/NotFound";
+
+import ProtectedRoute from "@/components/ProtectedRoute";
+import CreateEvent from "@/pages/CreateEvent";
+import AdminDashboard from "@/pages/AdminDashboard";
+import RequestAdmin from "@/pages/RequestAdmin";
+import SuperAdminDashboard from "@/pages/SuperAdminDashboard";
 
 const queryClient = new QueryClient();
 
@@ -17,11 +24,49 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
+
           <Route path="/" element={<Index />} />
           <Route path="/login" element={<Login />} />
           <Route path="/eventos" element={<AllEvents />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+
+          <Route
+            path="/solicitar-admin"
+            element={
+              <ProtectedRoute requireRole="USER">
+                <RequestAdmin />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/admin-dashboard"
+            element={
+              <ProtectedRoute requireRole="ADMIN">
+                <AdminDashboard />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/criar-evento"
+            element={
+              <ProtectedRoute requireRole="ADMIN">
+                <CreateEvent />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/super-admin"
+            element={
+              <ProtectedRoute requireRole="SUPER">
+                <SuperAdminDashboard />
+              </ProtectedRoute>
+            }
+          />
+
           <Route path="*" element={<NotFound />} />
+
         </Routes>
       </BrowserRouter>
     </TooltipProvider>
