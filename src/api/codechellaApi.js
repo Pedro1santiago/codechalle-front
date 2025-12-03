@@ -8,30 +8,7 @@ export function buildHeaders(token, extraHeaders = {}) {
   };
 }
 
-let keepAliveInterval = null;
-
 export function startKeepAlive() {
-  if (keepAliveInterval) return () => {};
-  
-  const INTERVAL = 90 * 1000;
-  
-  async function ping() {
-    try {
-      await fetch(`${BASE_URL}/eventos`, {
-        method: "HEAD",
-        signal: AbortSignal.timeout(5000)
-      }).catch(() => {});
-    } catch (e) {}
-  }
-
-  ping();
-  keepAliveInterval = setInterval(ping, INTERVAL);
-  
-  if (typeof window !== 'undefined') {
-    window.addEventListener('focus', ping);
-    window.addEventListener('load', ping);
-  }
-  
   return () => {};
 }
 
