@@ -17,7 +17,7 @@ export function useAdminApprovalCheck() {
           setShowApprovalModal(true);
         }
       } catch (e) {
-        console.error("Erro ao verificar aprovação:", e);
+        // Error handled silently
       }
     };
 

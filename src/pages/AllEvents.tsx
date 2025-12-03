@@ -76,15 +76,12 @@ const AllEvents = () => {
     let cancelled = false;
     async function load() {
       try {
-        console.info("[AllEvents] Carregando eventos", { hasToken: Boolean(user?.token) });
         const data = await getAllEvents(user?.token);
         if (!cancelled) {
           const eventosAtivos = Array.isArray(data) ? data.filter(e => e.statusEvento !== "CANCELADO" && e.status !== "CANCELADO") : [];
           setEventos(eventosAtivos);
-          console.info("[AllEvents] Eventos carregados", { total: Array.isArray(data) ? data.length : 0, ativos: eventosAtivos.length });
         }
       } catch (e) {
-        console.error("[AllEvents] Erro ao carregar eventos:", e);
         if (!cancelled) setEventos([]);
       }
     }

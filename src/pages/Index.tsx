@@ -64,15 +64,12 @@ const Index = () => {
     let cancelled = false;
     async function load() {
       try {
-        console.info("[Index] Carregando eventos", { hasToken: Boolean(user?.token) });
         const data = await getAllEvents(user?.token);
         if (!cancelled) {
           const eventosAtivos = Array.isArray(data) ? data.filter(e => e.statusEvento !== "CANCELADO" && e.status !== "CANCELADO") : [];
           setEventos(eventosAtivos);
-          console.info("[Index] Eventos carregados", { total: Array.isArray(data) ? data.length : 0, ativos: eventosAtivos.length });
         }
       } catch (e) {
-        console.error("[Index] Erro ao carregar eventos:", e);
         if (!cancelled) setEventos([]);
       }
     }

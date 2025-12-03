@@ -1,11 +1,22 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { listarEventosSSE, deleteEventAsAdmin } from "@/api/codechellaApi";
+import { listarEventosSSE, excluirEvento } from "@/api/codechellaApi";
 import { Button } from "@/components/ui/button";
 import { Navbar } from "@/components/Navbar";
 import { useNavigate } from "react-router-dom";
 import { Trash2, Edit } from "lucide-react";
 import { getCustomImage } from "@/lib/imageStorage";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { useToast } from "@/hooks/use-toast";
 
 // Mapeamento de imagens por categoria
 const categoriasImagens: Record<string, string> = {
@@ -46,9 +57,12 @@ interface Evento {
 export default function AdminDashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [eventos, setEventos] = useState<Evento[]>([]);
   const [meusEventos, setMeusEventos] = useState<Evento[]>([]);
   const [loading, setLoading] = useState(true);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [eventoToDelete, setEventoToDelete] = useState<number | null>(null);
 
   useEffect(() => {
     // Carregar eventos inicialmente via API REST
@@ -58,7 +72,7 @@ export default function AdminDashboard() {
         const data = await getAllEvents(user?.token);
         setEventos(data);
       } catch (error) {
-        console.error("Erro ao carregar eventos:", error);
+        // Error handled silently
       } finally {
         setLoading(false);
       }
@@ -89,13 +103,33 @@ export default function AdminDashboard() {
     setMeusEventos(filtered);
   }, [eventos, user?.id]);
 
-  async function handleDeleteEvent(id: number) {
-    if (!confirm("Tem certeza que deseja deletar este evento?")) return;
+  function openDeleteDialog(id: number) {
+    setEventoToDelete(id);
+    setDeleteDialogOpen(true);
+  }
+
+  async function confirmDelete() {
+    if (!eventoToDelete) return;
     try {
-      await deleteEventAsAdmin(id, user?.id ?? 0);
-      setMeusEventos((prev) => prev.filter((e) => e.id !== id));
+      await excluirEvento(eventoToDelete, user?.token || "");
+      
+      // Remover do estado de todos os eventos E dos meus eventos
+      setEventos((prev) => prev.filter((e) => e.id !== eventoToDelete));
+      setMeusEventos((prev) => prev.filter((e) => e.id !== eventoToDelete));
+      
+      toast({
+        title: "Evento deletado",
+        description: "O evento foi removido com sucesso.",
+      });
     } catch (err: any) {
-      console.error(err.message);
+      toast({
+        title: "Erro ao deletar",
+        description: err.message || "Não foi possível deletar o evento.",
+        variant: "destructive",
+      });
+    } finally {
+      setDeleteDialogOpen(false);
+      setEventoToDelete(null);
     }
   }
 
@@ -176,7 +210,7 @@ export default function AdminDashboard() {
                       <Button 
                         variant="destructive"
                         className="w-full"
-                        onClick={() => handleDeleteEvent(evento.id)}
+                        onClick={() => openDeleteDialog(evento.id)}
                       >
                         <Trash2 className="w-4 h-4 mr-2" />
                         Deletar
@@ -189,6 +223,23 @@ export default function AdminDashboard() {
           )}
         </div>
       </div>
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Tem certeza que deseja deletar este evento?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação não pode ser desfeita. O evento será permanentemente removido do sistema.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Sim, deletar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

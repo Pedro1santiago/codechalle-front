@@ -21,7 +21,7 @@ export function saveSolicitation(userId: number, userName: string): void {
     };
     localStorage.setItem(SOLICITATION_KEY, JSON.stringify(solicitation));
   } catch (error) {
-    console.error("Erro ao salvar solicitação:", error);
+    // Error handled silently
   }
 }
 
@@ -31,7 +31,6 @@ export function getSolicitation(): AdminSolicitation | null {
     const data = localStorage.getItem(SOLICITATION_KEY);
     return data ? JSON.parse(data) : null;
   } catch (error) {
-    console.error("Erro ao ler solicitação:", error);
     return null;
   }
 }
@@ -46,7 +45,7 @@ export function updateSolicitationStatus(status: "PENDENTE" | "APROVADA" | "NEGA
       localStorage.setItem(SOLICITATION_KEY, JSON.stringify(solicitation));
     }
   } catch (error) {
-    console.error("Erro ao atualizar status:", error);
+    // Error handled silently
   }
 }
 
@@ -55,7 +54,7 @@ export function clearSolicitation(): void {
   try {
     localStorage.removeItem(SOLICITATION_KEY);
   } catch (error) {
-    console.error("Erro ao limpar solicitação:", error);
+    // Error handled silently
   }
 }
 

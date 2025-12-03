@@ -16,7 +16,7 @@ function connectSSE(url, onMessage) {
     } catch {}
   };
   eventSource.onerror = (err) => {
-    console.warn("[SSE] erro no stream:", url, err);
+    // SSE error handled silently
   };
   return eventSource;
 }
@@ -60,12 +60,10 @@ export async function excluirEvento(id, token) {
 }
 
 export async function cancelarEvento(id, token) {
-  console.debug(`[API] PATCH /eventos/${id}/cancelar iniciando`);
   const res = await fetch(`${BASE_URL}/eventos/${id}/cancelar`, {
     method: "PATCH",
     headers: buildHeaders(token)
   });
-  console.debug(`[API] PATCH /eventos/${id}/cancelar -> status ${res.status}`);
   if (!res.ok) {
     const text = await res.text().catch(() => "");
     let errorMsg = "Erro ao cancelar evento";
@@ -73,12 +71,10 @@ export async function cancelarEvento(id, token) {
       const e = text ? JSON.parse(text) : {};
       errorMsg = e?.message || e?.error || errorMsg;
     } catch {}
-    console.error(`[API] PATCH /eventos/${id}/cancelar -> erro:`, errorMsg, text);
     throw new Error(errorMsg);
   }
   const text = await res.text();
   const result = text ? JSON.parse(text) : {};
-  console.debug(`[API] PATCH /eventos/${id}/cancelar -> sucesso`);
   return result;
 }
 
@@ -231,7 +227,6 @@ export async function verificarStatusSolicitacao(usuarioId, token) {
     
     return null;
   } catch (e) {
-    console.error("Erro ao verificar status:", e);
     return null;
   }
 }
@@ -341,7 +336,6 @@ export async function rejectAdminRequest(id, token) {
 export async function getAllEvents(token) {
   const url = `${BASE_URL}/eventos`;
   const hasToken = Boolean(token);
-  console.debug("[API] GET /eventos -> iniciando", { hasToken });
   
   try {
     const res = await fetch(url, {
@@ -350,23 +344,18 @@ export async function getAllEvents(token) {
     const raw = await res.text().catch(() => "");
     
     if (!res.ok) {
-      console.error("[API] GET /eventos -> falha", { status: res.status, body: raw });
       // Se for 401 e não tiver token, retorna array vazio ao invés de erro
       if (res.status === 401 && !hasToken) {
-        console.warn("[API] GET /eventos -> 401 sem token, retornando array vazio");
         return [];
       }
       throw new Error(`Erro ao buscar eventos (${res.status})`);
     }
     
     const data = raw ? JSON.parse(raw) : [];
-    console.debug("[API] GET /eventos -> sucesso", { count: Array.isArray(data) ? data.length : 0 });
     return data;
   } catch (e) {
-    console.error("[API] GET /eventos -> erro", e);
     // Se der erro e não tiver token, retorna array vazio
     if (!hasToken) {
-      console.warn("[API] GET /eventos -> erro sem token, retornando array vazio");
       return [];
     }
     throw e;
@@ -376,21 +365,17 @@ export async function getAllEvents(token) {
 export async function getEventsByCategory(tipo, token) {
   const url = `${BASE_URL}/eventos/categoria/${encodeURIComponent(tipo)}`;
   const hasToken = Boolean(token);
-  console.debug("[API] GET /eventos/categoria -> iniciando", { tipo, hasToken });
   const res = await fetch(url, {
     headers: hasToken ? buildHeaders(token) : { "Content-Type": "application/json" }
   });
   const raw = await res.text().catch(() => "");
   if (!res.ok) {
-    console.error("[API] GET /eventos/categoria -> falha", { status: res.status, body: raw });
     throw new Error(`Erro ao buscar eventos por categoria (${res.status})`);
   }
   try {
     const data = raw ? JSON.parse(raw) : [];
-    console.debug("[API] GET /eventos/categoria -> sucesso", { count: Array.isArray(data) ? data.length : 0 });
     return data;
   } catch (e) {
-    console.error("[API] GET /eventos/categoria -> erro parse JSON", e, raw);
     throw e;
   }
 }

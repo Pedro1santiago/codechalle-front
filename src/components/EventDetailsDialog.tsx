@@ -44,7 +44,6 @@ export default function EventDetailsDialog({ open, onOpenChange, evento, onDelet
       onOpenChange(false);
       alert("✓ Evento cancelado com sucesso!");
     } catch (e: any) {
-      console.error("Erro ao cancelar evento:", e);
       alert("❌ Erro ao cancelar evento: " + (e.message || "Erro desconhecido"));
       setConfirm(false);
     } finally {
@@ -106,7 +105,6 @@ export default function EventDetailsDialog({ open, onOpenChange, evento, onDelet
                     <Button variant="outline" onClick={() => onOpenChange(false)}>Fechar</Button>
                     <Button variant="default" onClick={() => {
                       // TODO: Implementar compra de ingresso
-                      console.log("Comprar ingresso para evento:", evento.id);
                     }}>
                       Comprar Ingresso
                     </Button>

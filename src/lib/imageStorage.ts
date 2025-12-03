@@ -13,7 +13,7 @@ export function saveCustomImage(eventId: number, imageUrl: string): void {
     images[eventId.toString()] = imageUrl;
     localStorage.setItem(STORAGE_KEY, JSON.stringify(images));
   } catch (error) {
-    console.error("Erro ao salvar imagem customizada:", error);
+    // Error handled silently
   }
 }
 
@@ -23,7 +23,6 @@ export function getCustomImage(eventId: number): string | null {
     const images = getCustomImages();
     return images[eventId.toString()] || null;
   } catch (error) {
-    console.error("Erro ao buscar imagem customizada:", error);
     return null;
   }
 }
@@ -34,7 +33,6 @@ export function getCustomImages(): CustomImages {
     const data = localStorage.getItem(STORAGE_KEY);
     return data ? JSON.parse(data) : {};
   } catch (error) {
-    console.error("Erro ao ler imagens customizadas:", error);
     return {};
   }
 }
@@ -46,7 +44,7 @@ export function removeCustomImage(eventId: number): void {
     delete images[eventId.toString()];
     localStorage.setItem(STORAGE_KEY, JSON.stringify(images));
   } catch (error) {
-    console.error("Erro ao remover imagem customizada:", error);
+    // Error handled silently
   }
 }
 
@@ -55,6 +53,6 @@ export function clearCustomImages(): void {
   try {
     localStorage.removeItem(STORAGE_KEY);
   } catch (error) {
-    console.error("Erro ao limpar imagens customizadas:", error);
+    // Error handled silently
   }
 }

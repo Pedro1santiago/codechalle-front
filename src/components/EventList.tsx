@@ -12,11 +12,9 @@ export default function EventList() {
     let cancelled = false;
     async function load() {
       try {
-        console.info("[EventList] Carregando eventos", { hasToken: Boolean(user?.token) });
         const data = await getAllEvents(user?.token);
         if (!cancelled) setEventos(Array.isArray(data) ? data : []);
       } catch (e) {
-        console.error("[EventList] Erro ao carregar eventos:", e);
         if (!cancelled) setEventos([]);
       }
     }

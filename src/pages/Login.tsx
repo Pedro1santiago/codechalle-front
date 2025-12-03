@@ -23,34 +23,21 @@ const Login = () => {
     setMsg("");
     setLoading(true);
 
-    console.log("🔵 [HANDLELOGIN] Tentando fazer login com:", loginData);
-
     try {
       const data = await loginUsuario(loginData.email, loginData.senha);
-      console.log("✅ [HANDLELOGIN] Resposta completa do login:", data);
-      console.log("✅ [HANDLELOGIN] Token recebido:", data?.token);
-      console.log("✅ [HANDLELOGIN] TipoUsuario recebido:", data?.tipoUsuario);
-      console.log("✅ [HANDLELOGIN] ID recebido:", data?.id);
       
       // Grava o usuário no contexto e localStorage
       setUser(data);
-      console.log("✅ [HANDLELOGIN] Usuário gravado no contexto");
       
       // Redireciona baseado no tipoUsuario vindo do backend (TipoUsuario: SUPER, ADMIN, USER)
-      console.log("🔵 [HANDLELOGIN] TipoUsuario para redirecionar:", data?.tipoUsuario);
-      
       if (data.tipoUsuario === "SUPER") {
-        console.log("🔵 [HANDLELOGIN] Redirecionando para /super-admin");
         navigate("/super-admin");
       } else if (data.tipoUsuario === "ADMIN") {
-        console.log("🔵 [HANDLELOGIN] Redirecionando para /admin-dashboard");
         navigate("/admin-dashboard");
       } else {
-        console.log("🔵 [HANDLELOGIN] Redirecionando para /");
         navigate("/");
       }
     } catch (err) {
-      console.error("❌ [HANDLELOGIN] Erro ao fazer login:", err);
       setMsg(err.message || "Email ou senha inválidos");
     } finally {
       setLoading(false);

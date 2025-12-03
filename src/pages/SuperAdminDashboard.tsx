@@ -60,7 +60,6 @@ export default function SuperAdminDashboard() {
         setLoadingSolicitacoes(false);
       }, 2000);
     } catch (err) {
-      console.error("Erro ao carregar solicitações:", err);
       setLoadingSolicitacoes(false);
     }
   }
@@ -79,7 +78,7 @@ export default function SuperAdminDashboard() {
         setUsuarios(data);
       }
     } catch (err) {
-      console.error("Erro ao atualizar:", err);
+      // Error handled silently
     } finally {
       setLoadingSolicitacoes(false);
     }
@@ -87,7 +86,6 @@ export default function SuperAdminDashboard() {
 
   useEffect(() => {
     if (!user?.id || !user?.token) {
-      console.warn("⚠️ [SUPER] Usuário ou token não disponível");
       return;
     }
 
@@ -96,11 +94,11 @@ export default function SuperAdminDashboard() {
     // Carregar admins e usuários uma vez
     listarAdmins(user.token)
       .then(data => setAdmins(data))
-      .catch(err => console.error("Erro ao carregar admins:", err));
+      .catch(err => {});
 
     listarUsuarios(user.token)
       .then(data => setUsuarios(data))
-      .catch(err => console.error("Erro ao carregar usuários:", err));
+      .catch(err => {});
   }, [user?.id, user?.token]);
 
   async function handleAprovar(id: number) {
@@ -108,7 +106,7 @@ export default function SuperAdminDashboard() {
       await aprovarSolicitacao(id, user?.token ?? "", user?.id);
       setSolicitacoes((prev) => prev.filter((s) => s.id !== id));
     } catch (err: any) {
-      console.error(err.message);
+      // Error handled silently
     }
   }
 
@@ -117,7 +115,7 @@ export default function SuperAdminDashboard() {
       await negarSolicitacao(id, "", user?.token ?? "", user?.id);
       setSolicitacoes((prev) => prev.filter((s) => s.id !== id));
     } catch (err: any) {
-      console.error(err.message);
+      // Error handled silently
     }
   }
 
@@ -127,7 +125,7 @@ export default function SuperAdminDashboard() {
       await removerAdmin(id, user?.id ?? 0);
       setAdmins((prev) => prev.filter((a) => a.id !== id));
     } catch (err: any) {
-      console.error(err.message);
+      // Error handled silently
     }
   }
 
@@ -137,7 +135,7 @@ export default function SuperAdminDashboard() {
       await removerUsuario(id, user?.id ?? 0);
       setUsuarios((prev) => prev.filter((u) => u.id !== id));
     } catch (err: any) {
-      console.error(err.message);
+      // Error handled silently
     }
   }
 
