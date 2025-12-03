@@ -23,16 +23,8 @@ export const Navbar = () => {
     if (tipo === "ADMIN" || tipo === "SUPER") {
       navigate("/criar-evento");
     } else {
-      // Verificar se já tem solicitação pendente
-      const hasPending = hasPendingSolicitation(user.id);
-      
-      if (hasPending) {
-        alert("Você já possui uma solicitação de admin pendente. Acesse 'Meu Status' para acompanhar.");
-        navigate("/user/request-status");
-      } else {
-        alert("Você precisa ser ADMIN para criar eventos. Faça uma solicitação.");
-        navigate("/solicitar-admin");
-      }
+      // Redirecionar para página de solicitação
+      navigate("/solicitar-admin");
     }
   }
 
@@ -80,25 +72,22 @@ export const Navbar = () => {
                   )}
                 </div>
 
-                {user.tipoUsuario === "ADMIN" || user.tipoUsuario === "SUPER" ? (
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="hidden md:flex"
-                    onClick={() => navigate(user.tipoUsuario === "SUPER" ? "/super-admin" : "/admin-dashboard")}
-                  >
-                    Dashboard
-                  </Button>
-                ) : (
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="hidden md:flex"
-                    onClick={() => navigate("/user/request-status")}
-                  >
-                    Meu Status
-                  </Button>
-                )}
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="hidden md:flex"
+                  onClick={() => {
+                    if (user.tipoUsuario === "SUPER") {
+                      navigate("/super-admin");
+                    } else if (user.tipoUsuario === "ADMIN") {
+                      navigate("/admin-dashboard");
+                    } else {
+                      navigate("/user/request-status");
+                    }
+                  }}
+                >
+                  {(user.tipoUsuario === "ADMIN" || user.tipoUsuario === "SUPER") ? "Dashboard" : "Meu Status"}
+                </Button>
 
                 <Button variant="outline" size="sm" className="hidden md:flex" onClick={handleLogout}>
                   <LogOut className="w-4 h-4 mr-2" />

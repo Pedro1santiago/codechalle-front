@@ -28,7 +28,7 @@ export default function EditEvent() {
   const [msgType, setMsgType] = useState<"success" | "error" | null>(null);
 
   useEffect(() => {
-    // Carregar dados do evento
+    // Carregar dados do evento e ingresso
     async function loadEvento() {
       try {
         const response = await fetch(`https://codechella-backend.onrender.com/eventos/${id}`, {
@@ -77,6 +77,18 @@ export default function EditEvent() {
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) {
     setForm({ ...form, [e.target.name]: e.target.value });
+  }
+
+  function handlePrecoChange(e: React.ChangeEvent<HTMLInputElement>) {
+    let value = e.target.value.replace(/\D/g, "");
+    
+    if (value === "") {
+      setForm({ ...form, preco: "" });
+      return;
+    }
+    
+    const numberValue = parseInt(value) / 100;
+    setForm({ ...form, preco: numberValue.toFixed(2) });
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -175,15 +187,18 @@ export default function EditEvent() {
 
                   <div>
                     <Label className="text-base font-semibold mb-2 block">Preço (R$)</Label>
-                    <Input 
-                      type="number" 
-                      name="preco" 
-                      value={form.preco} 
-                      onChange={handleChange} 
-                      placeholder="0.00"
-                      step="0.01"
-                      required 
-                    />
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">R$</span>
+                      <Input 
+                        type="text" 
+                        name="preco" 
+                        value={form.preco ? parseFloat(form.preco).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : ''} 
+                        onChange={handlePrecoChange} 
+                        placeholder="0,00"
+                        className="pl-12"
+                        required 
+                      />
+                    </div>
                   </div>
                 </div>
 

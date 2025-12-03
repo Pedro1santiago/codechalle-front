@@ -36,6 +36,7 @@ export default function EventList() {
           image={ev.imagemUrl || ev.imagem}
           category={ev.categoria || ev.tipo}
           id={ev.id}
+          ingressosDisponiveis={ev.ingressosDisponiveis}
         />
       ))}
     </div>

@@ -30,6 +30,18 @@ export default function CreateEvent() {
     setForm({ ...form, [e.target.name]: e.target.value });
   }
 
+  function handlePrecoChange(e: React.ChangeEvent<HTMLInputElement>) {
+    let value = e.target.value.replace(/\D/g, "");
+    
+    if (value === "") {
+      setForm({ ...form, preco: "" });
+      return;
+    }
+    
+    const numberValue = parseInt(value) / 100;
+    setForm({ ...form, preco: numberValue.toFixed(2) });
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
@@ -41,9 +53,8 @@ export default function CreateEvent() {
         data: form.data,
         local: form.local,
         preco: parseFloat(form.preco),
-        tipo: form.categoria, // Backend espera "tipo" ao invés de "categoria"
+        tipo: form.categoria,
         descricao: form.descricao,
-        // imagem não é enviada ao backend, apenas mantida no frontend
         ingressosDisponiveis: parseInt(form.ingressosDisponiveis)
       };
 
@@ -51,7 +62,7 @@ export default function CreateEvent() {
       const eventoCreated = await cadastrarEvento(eventoPayload, user?.token);
       
       // Se o usuário forneceu uma URL de imagem customizada, salvar no localStorage
-      if (form.imagem && eventoCreated?.id) {
+      if (eventoCreated?.id && form.imagem) {
         saveCustomImage(eventoCreated.id, form.imagem);
       }
       
@@ -104,15 +115,18 @@ export default function CreateEvent() {
 
                   <div>
                     <Label className="text-base font-semibold mb-2 block">Preço (R$)</Label>
-                    <Input 
-                      type="number" 
-                      name="preco" 
-                      value={form.preco} 
-                      onChange={handleChange} 
-                      placeholder="0.00"
-                      step="0.01"
-                      required 
-                    />
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">R$</span>
+                      <Input 
+                        type="text" 
+                        name="preco" 
+                        value={form.preco ? parseFloat(form.preco).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : ''} 
+                        onChange={handlePrecoChange} 
+                        placeholder="0,00"
+                        className="pl-12"
+                        required 
+                      />
+                    </div>
                   </div>
                 </div>
 

@@ -91,6 +91,23 @@ export async function cadastrarIngresso(ingresso, token) {
   return res.json();
 }
 
+export async function buscarIngressoPorEventoId(eventoId, token) {
+  const res = await fetch(`${BASE_URL}/ingressos/evento/${eventoId}`, {
+    headers: buildHeaders(token)
+  });
+  if (!res.ok) return null;
+  return res.json();
+}
+
+export async function atualizarIngresso(id, ingresso, token) {
+  const res = await fetch(`${BASE_URL}/ingressos/${id}`, {
+    method: "PUT",
+    headers: buildHeaders(token),
+    body: JSON.stringify(ingresso)
+  });
+  return res.json();
+}
+
 export function listarIngressosSSE(callback) {
   return connectSSE(`${BASE_URL}/ingressos`, callback);
 }
